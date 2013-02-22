@@ -1,0 +1,119 @@
+<html>
+
+  <head>
+  <!-- INCLUDES -->
+  <script src="misc.js"></script>
+  <script src="S.js"></script>
+  <script src="fft.js"></script>
+  <script src="webaudio.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="d3line.js"></script>
+
+  <link rel="stylesheet" type="text/css" href="d3line.css">
+
+  <script type="text/javascript">  
+  // ----------------------------------------------------------------
+  
+  var over_window = function(w) {
+    return function(output) {
+      var stack = [];
+      return function(value) {
+        //console.log("got value: " + JSON.stringify(value) + ".");
+        stack.push(value);
+
+        if (stack.length == w) {
+          output(stack);
+          stack.length = 0;
+        }
+      };
+    };
+  }
+
+  var do_fft = function(output) {
+    var fft = new FFT(128);
+    return function(value) {
+      value["length"] = 4096;
+      data = value;
+      var signal = Array.prototype.slice.call(value);
+      spectrum = fft.forward(signal)
+      output(spectrum.real)
+    }
+  }
+
+  var do_graph = function(element_name) {
+    return function(output) {
+      return function(o) {
+        var data_array = Array.prototype.slice.call(o)
+        d3line(element_name, data_array);
+        output(o);
+      }
+    }
+  } 
+
+  consolelog = function(output) {
+    return function(value) {
+      console.log("output: " + JSON.stringify(value));
+      output("hello " + JSON.stringify(value));
+    }
+  }
+
+  var sensor = S.make();
+
+  sensor.stream.map(do_graph("#graph1")).map(do_fft).map(do_graph("#graph2"))
+
+  /*
+  for (ii = 0; ii < 7; ++ii) {
+    (function(ii) {
+      setTimeout(function () { sensor.put({'value': ii, 'time': (new Date()).getTime()}); }, (ii+1)*0);
+    })(ii);
+  }
+  */
+
+  // ------------------------------------
+  // 
+
+  var mic_capture = false;
+
+  var audioCallback = function(floatArray) {
+    if (mic_capture == false) return;
+    console.log('got data');
+    setTimeout(function() { sensor.put(floatArray); }, 0);
+    mic_capture = false;
+  }
+  var mic = webMic(audioCallback);
+
+  window.onload = function init() {
+
+    mic.initialize();
+    
+  };
+  </script>
+  </head>
+  <body>
+    
+    <div><a href="javascript:mic_capture=true;">ONE SHOT SAMPLE</a></div>
+    
+    <strong>Audio Waveform</strong>
+    <div id="graph1" class="aGraph"></div>
+    
+    <strong>Fourier Spectrum (real part)</strong>
+    <div id="graph2" class="aGraph"></div>
+
+<!--
+<pre>
+  MONADS, PROMISES
+    - https://github.com/douglascrockford/monad
+    - https://www.youtube.com/watch?v=b0EF0VTs9Dc
+  Promises:
+    - vow = VOW.make(); vow.promise.when(alert, alert); vow.keep('yay')
+  Monad
+    - var monad = MONAD().lift('alert', alert); monad("HELLO").alert()
+
+  WEB AUDIO API:
+    - https://github.com/mattdiamond/Recorderjs
+</pre>
+-->
+  
+
+  </body>
+</html>
