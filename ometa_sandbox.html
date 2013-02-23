@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <script src="ometa/lib.js"></script>
+    <script src="ometa/ometa-base.js"></script>
+    <script src="ometa/parser.js"></script>
+    <script src="ometa/bs-js-compiler.js"></script>
+    <script src="ometa/bs-ometa-compiler.js"></script>
+    <script src="ometa/bs-ometa-optimizer.js"></script>
+    <script src="ometa/bs-ometa-js-compiler.js"></script>
+
+    <script type="text/javascript">
+      translateCode = function(s) {
+        var translationError = function(m, i) {
+          console.log("Translation error - please tell Alex about this!");
+          throw fail
+        };
+
+        var tree = BSOMetaJSParser.matchAll(
+            s, "topLevel", undefined, function(m, i) {
+              throw objectThatDelegatesTo(fail, {errorPos: i}) });
+
+        return BSOMetaJSTranslator.match(
+            tree, "trans", undefined, translationError);
+        }
+
+        var ometa = function(s) { return eval(translateCode(s)); };
+    </script>
+  </head>
+  <body>
+    <pre>
+      ometa("ometa M { ones = 1* }")
+      M.matchAll([1, 1, 1, 1, 1], "ones")
+    </pre>
+  </body>
+</html>
+
